@@ -22,9 +22,17 @@ for (path, category, cwe, native_output, native_error, native_exit, wasm_output,
     differences[cwe].append(path)
     total_differences += 1
 
+def select_program(programs):
+    """Select a single program out of a list of programs. Will try to not select programs that contain 'wchar' if possible, as many divergences come from wchar, but we are mostly interested in the other ones"""
+    without_wchar = [program for program in programs if not ('wchar' in program)]
+    if without_wchar == []:
+        return programs[0] + ('--> WCHAR')
+    else:
+        return without_wchar[0]
+
 print('There are {} differences in total, across {} CWEs'.format(total_differences, len(differences)))
 for cwe in differences:
-    print('CWE {} has {} differences. One example is {}'.format(cwe, len(differences[cwe]), differences[cwe][0]))
+    print('CWE {} has {} differences. One example is {}'.format(cwe, len(differences[cwe]), select_program(differences[cwe])))
 
 compilation_time_wasm, compilation_time_native, execution_time_wasm, execution_time_native = cursor.execute('''select sum(wasm_compile), sum(native_compile), sum(wasm_run), sum(native_run) from timing''').fetchall()[0]
 print('Compilation time (wasm): %d minutes' % (compilation_time_wasm / 1000 / 60))
